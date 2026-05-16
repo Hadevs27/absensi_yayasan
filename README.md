@@ -1,19 +1,215 @@
-# Absensi K-Means
+# Sistem Informasi Absensi Yayasan dengan Analisis Kedisiplinan K-Means
 
-Sistem Informasi Absensi Berbasis Web dengan Integrasi Algoritma K-Means.
+Aplikasi web untuk mencatat, memonitor, dan menganalisis kedisiplinan siswa pada yayasan/sekolah anak yatim dan dhuafa. Fokus utama sistem adalah absensi harian, rekap kehadiran, dashboard monitoring, dan analisis sederhana menggunakan K-Means.
 
-## Stack
+## Tech Stack
 
-- Next.js + TypeScript
-- Tailwind CSS
+- Next.js App Router
+- TypeScript
+- TailwindCSS
+- PostgreSQL
 - Drizzle ORM
-- PostgreSQL Neon
-- `@neondatabase/serverless`
-- Target deploy: Vercel
+- Neon Database
+- Recharts
+- Zod
+- React Hook Form
+
+## Core Scope
+
+- Authentication admin dan user
+- Protected route dan role-based middleware
+- Master data siswa dan kelas
+- Absensi harian siswa
+- Rekap absensi
+- Dashboard statistik
+- Analytics kedisiplinan
+- K-Means clustering sederhana
+- Export laporan
+
+Role yang digunakan hanya:
+
+- `admin`
+- `user`
+
+## Architecture Overview
+
+```mermaid
+flowchart TD
+  A["User Browser"] --> B["Next.js App Router"]
+  B --> C["Server Components"]
+  B --> D["Route Handlers"]
+  D --> E["Feature Services"]
+  C --> E
+  E --> F["Drizzle ORM"]
+  F --> G["PostgreSQL Neon"]
+  D --> H["Zod Validation"]
+  C --> I["Reusable UI Components"]
+  I --> J["Recharts Dashboard"]
+```
+
+## Folder Structure
+
+```text
+src/
+  app/                    App Router pages, loading states, and API routes
+  components/             Shared layout and UI components
+  components/ui/          Empty state, skeleton, toast provider
+  core/                   Cross-feature constants, validation, HTTP helpers
+  db/                     Drizzle schema, connection, seed
+  features/
+    analytics/            K-Means dataset and clustering service
+    classes/              Class data service
+    dashboard/            Dashboard query service and chart widgets
+    students/             Student data service
+  lib/                    Auth/session/date utilities and pure K-Means helper
+```
+
+## Database Model
+
+```mermaid
+erDiagram
+  USERS ||--o{ CLASSES : "homeroom_teacher"
+  CLASSES ||--o{ STUDENTS : "contains"
+  CLASSES ||--o{ ATTENDANCE_SESSIONS : "has"
+  ATTENDANCE_SESSIONS ||--o{ ATTENDANCE_DETAILS : "records"
+  STUDENTS ||--o{ ATTENDANCE_DETAILS : "has"
+  USERS ||--o{ ATTENDANCE_SESSIONS : "creates"
+  CLUSTER_RUNS ||--o{ CLUSTERING_RESULTS : "produces"
+  STUDENTS ||--o{ CLUSTERING_RESULTS : "classified_as"
+
+  USERS {
+    uuid id PK
+    text name
+    text email
+    text password_hash
+    enum role
+  }
+
+  CLASSES {
+    uuid id PK
+    text name
+    text level
+    text academic_year
+    uuid homeroom_teacher_id FK
+  }
+
+  STUDENTS {
+    uuid id PK
+    text nis
+    text name
+    uuid class_id FK
+    boolean is_active
+  }
+
+  ATTENDANCE_SESSIONS {
+    uuid id PK
+    uuid class_id FK
+    date attendance_date
+    uuid created_by FK
+  }
+
+  ATTENDANCE_DETAILS {
+    uuid id PK
+    uuid session_id FK
+    uuid student_id FK
+    enum status
+  }
+
+  CLUSTERING_RESULTS {
+    uuid id PK
+    uuid run_id FK
+    uuid student_id FK
+    text cluster_label
+    int total_hadir
+    int total_terlambat
+    int total_alfa
+    int total_izin
+  }
+```
+
+## Use Case Diagram
+
+```mermaid
+flowchart LR
+  Admin["Admin"] --> Login["Login"]
+  User["User / Wali Kelas"] --> Login
+
+  Admin --> ManageStudents["Kelola Siswa"]
+  Admin --> ManageClasses["Kelola Kelas"]
+  Admin --> ViewDashboard["Dashboard Admin"]
+  Admin --> RunAnalytics["Jalankan K-Means"]
+  Admin --> ExportReports["Export Laporan"]
+
+  User --> InputAttendance["Input Absensi Harian"]
+  User --> ViewClassSummary["Lihat Rekap Kelas"]
+```
+
+## Activity Diagram Absensi
+
+```mermaid
+flowchart TD
+  A["User login"] --> B["Pilih kelas"]
+  B --> C["Sistem tampilkan daftar siswa"]
+  C --> D["User isi status Hadir/Terlambat/Izin/Sakit/Alfa"]
+  D --> E["Validasi data absensi"]
+  E --> F{"Valid?"}
+  F -->|Ya| G["Simpan attendance session dan details"]
+  F -->|Tidak| H["Tampilkan error"]
+  G --> I["Dashboard dan rekap diperbarui"]
+```
+
+## Sequence Diagram K-Means
+
+```mermaid
+sequenceDiagram
+  actor Admin
+  participant UI as Analytics Page
+  participant API as K-Means API
+  participant Service as Analytics Service
+  participant DB as PostgreSQL
+
+  Admin->>UI: Pilih periode dan nilai K
+  UI->>API: POST /api/kmeans/run
+  API->>Service: getStudentDisciplineDataset
+  Service->>DB: Ambil attendance_details
+  DB-->>Service: Dataset agregat siswa
+  API->>Service: runStudentDisciplineClustering
+  Service-->>API: Cluster assignments
+  API->>DB: Simpan cluster_runs dan clustering_results
+  API-->>UI: Hasil analisis selesai
+```
+
+## Analytics Workflow
+
+1. Admin memilih periode analisis.
+2. Sistem mengambil data `attendance_details` berdasarkan session absensi.
+3. Data diagregasi per siswa menjadi:
+   - `total_hadir`
+   - `total_terlambat`
+   - `total_alfa`
+   - `total_izin`
+4. Dataset dikirim ke fungsi K-Means.
+5. Hasil cluster disimpan ke `clustering_results`.
+6. Dashboard menampilkan ringkasan cluster dan tren absensi.
+
+## K-Means Workflow
+
+Cluster dibuat untuk membantu membaca pola kedisiplinan siswa, bukan untuk membuat sistem machine learning kompleks.
+
+Output cluster:
+
+- Disiplin Tinggi
+- Disiplin Sedang
+- Disiplin Rendah
+
+Faktor yang digunakan:
+
+- Jumlah hadir
+- Jumlah terlambat
+- Jumlah alfa
+- Jumlah izin atau sakit
 
 ## Environment
-
-Isi `.env.local` dengan connection string dari Neon:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@ep-your-project-pooler.REGION.aws.neon.tech/absensi_kmeans?sslmode=require"
@@ -22,19 +218,9 @@ NEXT_PUBLIC_APP_NAME="Absensi K-Means"
 AUTH_SECRET="generate-a-long-random-secret"
 ```
 
-`DATABASE_URL` memakai host `-pooler` untuk runtime Next.js di localhost dan Vercel.
-`DATABASE_URL_UNPOOLED` opsional tetapi direkomendasikan untuk `drizzle-kit push`.
+Gunakan pooled URL untuk runtime Vercel dan localhost. Gunakan direct/non-pooled URL untuk `drizzle-kit push`.
 
-## Setup Neon
-
-1. Buka Neon Console.
-2. Buat project baru, misalnya `absensi-kmeans`.
-3. Buat atau pilih database `absensi_kmeans`.
-4. Di modal Connect, salin connection string pooled untuk `DATABASE_URL`.
-5. Salin connection string direct/non-pooled untuk `DATABASE_URL_UNPOOLED`.
-6. Masukkan variable yang sama di Vercel Project Settings -> Environment Variables.
-
-## Commands
+## Local Development
 
 ```bash
 npm install
@@ -44,7 +230,7 @@ npm run build
 npm run dev
 ```
 
-Di Windows PowerShell yang memblokir `npm.ps1`, pakai:
+Jika PowerShell memblokir `npm.ps1`, jalankan:
 
 ```powershell
 & "C:\Program Files\nodejs\npm.cmd" run dev
@@ -55,11 +241,34 @@ Di Windows PowerShell yang memblokir `npm.ps1`, pakai:
 - `admin@absensi.test` / `admin123`
 - `budi@absensi.test` / `user123`
 
-## Routes
+Seed juga membuat contoh kelas, siswa, absensi, dan dataset analytics.
+
+## Main Routes
 
 - `/login`
 - `/dashboard`
 - `/attendance`
-- `/reports` admin only
-- `/clusters` admin only
+- `/students`
+- `/classes`
+- `/reports`
+- `/clusters`
 
+## Engineering Improvements
+
+- Feature-based service layer
+- Typed API response helper
+- Zod validation
+- React Hook Form login flow
+- Reusable empty state and skeleton
+- Toast notification provider
+- Student-based analytics service
+- Recharts dashboard visualization
+- Indexed schema for students, classes, attendance, and clustering
+
+## Next Incremental Refactor
+
+- Tambah create/edit/delete siswa dan kelas dengan React Hook Form.
+- Tambah input absensi kelas berbasis `attendance_sessions` dan `attendance_details`.
+- Tambah export Excel dan PDF selain CSV.
+- Tambah pagination/filter pada laporan absensi.
+- Tambah optimistic UI dan audit log sederhana untuk perubahan absensi.

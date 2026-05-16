@@ -3,6 +3,8 @@
 import { Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
+import type { ApiResponse } from "@/core/http/api-response";
 
 export function RunKMeansForm() {
   const router = useRouter();
@@ -14,13 +16,11 @@ export function RunKMeansForm() {
   const [start, setStart] = useState(startDate.toISOString().slice(0, 10));
   const [endDate, setEndDate] = useState(end);
   const [k, setK] = useState(3);
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setMessage("");
 
     const response = await fetch("/api/kmeans/run", {
       method: "POST",
@@ -28,13 +28,18 @@ export function RunKMeansForm() {
       body: JSON.stringify({ startDate: start, endDate, k }),
     });
 
-    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+    const payload = (await response.json().catch(() => null)) as
+      | ApiResponse<{ runId: string }>
+      | null;
     setLoading(false);
-    setMessage(payload?.message ?? (response.ok ? "Analisis selesai." : "Analisis gagal."));
 
-    if (response.ok) {
-      router.refresh();
+    if (!response.ok || !payload?.ok) {
+      toast.error(payload?.message ?? "Analisis gagal.");
+      return;
     }
+
+    toast.success(payload.message ?? "Analisis selesai.");
+    router.refresh();
   }
 
   return (
@@ -80,7 +85,6 @@ export function RunKMeansForm() {
           <Play className="h-4 w-4" />
           {loading ? "Jalan..." : "Jalankan"}
         </button>
-        {message ? <p className="mt-2 text-xs font-medium text-stone-600 md:absolute">{message}</p> : null}
       </div>
     </form>
   );

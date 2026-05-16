@@ -1,9 +1,8 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { getDb } from "@/db/db";
-import { attendanceRecords, users } from "@/db/schema";
-import { statusLabels } from "@/lib/attendance";
+import { getAttendanceReportRows } from "@/features/reports/services/attendance-report-service";
+import { ATTENDANCE_STATUS_LABEL } from "@/core/constants/attendance";
 import { getCurrentSession } from "@/lib/auth";
-import { formatDateTimeId } from "@/lib/date";
+import { toSimplePdf, toSpreadsheetXml } from "@/lib/export";
 
 function csvCell(value: string | number | null | undefined) {
   const text = String(value ?? "");
@@ -18,58 +17,46 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const startDate = url.searchParams.get("startDate");
-  const endDate = url.searchParams.get("endDate");
-  const db = getDb();
+  const format = url.searchParams.get("format") ?? "csv";
+  const rows = await getAttendanceReportRows(getDb(), {
+    startDate: url.searchParams.get("startDate") ?? undefined,
+    endDate: url.searchParams.get("endDate") ?? undefined,
+    classId: url.searchParams.get("classId") ?? undefined,
+    status: url.searchParams.get("status") ?? undefined,
+    limit: 1000,
+  });
 
-  const where =
-    startDate && endDate
-      ? and(gte(attendanceRecords.workDate, startDate), lte(attendanceRecords.workDate, endDate))
-      : undefined;
+  const header = ["Tanggal", "NIS", "Nama", "Kelas", "Tahun Ajaran", "Status", "Catatan"];
+  const body = rows.map((row) => [
+    row.attendanceDate,
+    row.nis,
+    row.studentName,
+    row.className ?? "-",
+    row.academicYear ?? "-",
+    ATTENDANCE_STATUS_LABEL[row.status],
+    row.notes ?? "",
+  ]);
 
-  const rows = await db
-    .select({
-      employeeCode: users.employeeCode,
-      name: users.name,
-      email: users.email,
-      workDate: attendanceRecords.workDate,
-      status: attendanceRecords.status,
-      checkInAt: attendanceRecords.checkInAt,
-      checkOutAt: attendanceRecords.checkOutAt,
-      notes: attendanceRecords.notes,
-    })
-    .from(attendanceRecords)
-    .innerJoin(users, eq(attendanceRecords.userId, users.id))
-    .where(where)
-    .orderBy(desc(attendanceRecords.workDate));
+  if (format === "xls") {
+    return new Response(toSpreadsheetXml(header, body), {
+      headers: {
+        "Content-Type": "application/vnd.ms-excel; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="rekap-absensi.xls"',
+      },
+    });
+  }
 
-  const header = [
-    "Kode",
-    "Nama",
-    "Email",
-    "Tanggal",
-    "Status",
-    "Masuk",
-    "Keluar",
-    "Catatan",
-  ];
+  if (format === "pdf") {
+    const lines = body.map((row) => row.join(" | "));
+    return new Response(toSimplePdf("Laporan Rekap Absensi", [header.join(" | "), ...lines]), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": 'attachment; filename="rekap-absensi.pdf"',
+      },
+    });
+  }
 
-  const body = rows.map((row) =>
-    [
-      row.employeeCode,
-      row.name,
-      row.email,
-      row.workDate,
-      statusLabels[row.status],
-      formatDateTimeId(row.checkInAt),
-      formatDateTimeId(row.checkOutAt),
-      row.notes,
-    ]
-      .map(csvCell)
-      .join(","),
-  );
-
-  return new Response([header.map(csvCell).join(","), ...body].join("\n"), {
+  return new Response([header.map(csvCell).join(","), ...body.map((row) => row.map(csvCell).join(","))].join("\n"), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": 'attachment; filename="rekap-absensi.csv"',

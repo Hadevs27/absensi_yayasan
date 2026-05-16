@@ -2,7 +2,14 @@ import { config } from "dotenv";
 import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { attendanceRecords, users } from "./schema";
+import {
+  attendanceDetails,
+  attendanceRecords,
+  attendanceSessions,
+  classes,
+  students,
+  users,
+} from "./schema";
 import { toIsoDate } from "@/lib/date";
 
 config({ path: ".env.local" });
@@ -100,6 +107,59 @@ async function main() {
 
   const savedUsers = await db.select().from(users);
   const userByEmail = new Map(savedUsers.map((user) => [user.email, user]));
+  const waliKelas = userByEmail.get("budi@absensi.test");
+
+  await db
+    .insert(classes)
+    .values({
+      name: "Kelas A",
+      level: "SD",
+      academicYear: "2025/2026",
+      homeroomTeacherId: waliKelas?.id,
+    })
+    .onConflictDoUpdate({
+      target: [classes.name, classes.academicYear],
+      set: {
+        level: "SD",
+        homeroomTeacherId: waliKelas?.id,
+        updatedAt: new Date(),
+      },
+    });
+
+  const [kelasA] = await db.select().from(classes).where(eq(classes.name, "Kelas A"));
+
+  if (!kelasA) {
+    throw new Error("Seed kelas gagal dibuat.");
+  }
+
+  const seedStudents = [
+    { nis: "SIS-001", name: "Ahmad Fauzi", guardianName: "Ibu Sari" },
+    { nis: "SIS-002", name: "Nur Aisyah", guardianName: "Bapak Hasan" },
+    { nis: "SIS-003", name: "Rizky Pratama", guardianName: "Ibu Dewi" },
+    { nis: "SIS-004", name: "Maya Safitri", guardianName: "Bapak Umar" },
+    { nis: "SIS-005", name: "Fajar Hidayat", guardianName: "Ibu Ani" },
+    { nis: "SIS-006", name: "Salsa Nabila", guardianName: "Bapak Yusuf" },
+  ];
+
+  for (const seedStudent of seedStudents) {
+    await db
+      .insert(students)
+      .values({
+        ...seedStudent,
+        classId: kelasA?.id,
+      })
+      .onConflictDoUpdate({
+        target: students.nis,
+        set: {
+          name: seedStudent.name,
+          guardianName: seedStudent.guardianName,
+          classId: kelasA?.id,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
   const dates = pastWorkDates(18);
 
   const patterns = [
@@ -197,6 +257,55 @@ async function main() {
           notes: status === "permission" ? "Izin kegiatan keluarga" : null,
         })
         .onConflictDoNothing();
+    }
+  }
+
+  const savedStudents = await db.select().from(students).where(eq(students.classId, kelasA.id));
+  const studentPatterns = [
+    ["present", "present", "present", "present", "late", "present", "present", "present", "present", "present", "present", "present"],
+    ["present", "late", "present", "permission", "present", "present", "late", "present", "present", "present", "present", "late"],
+    ["late", "present", "absent", "present", "late", "sick", "present", "late", "absent", "present", "late", "present"],
+    ["present", "present", "present", "present", "present", "present", "present", "present", "present", "present", "present", "present"],
+    ["absent", "late", "permission", "present", "absent", "late", "present", "sick", "absent", "present", "late", "permission"],
+    ["present", "present", "sick", "present", "present", "permission", "present", "present", "late", "present", "present", "present"],
+  ] as const;
+
+  for (const [dateIndex, workDate] of dates.slice(-12).entries()) {
+    const [session] = await db
+      .insert(attendanceSessions)
+      .values({
+        classId: kelasA.id,
+        attendanceDate: workDate,
+        createdBy: waliKelas?.id,
+      })
+      .onConflictDoUpdate({
+        target: [attendanceSessions.classId, attendanceSessions.attendanceDate],
+        set: {
+          createdBy: waliKelas?.id,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    for (const [studentIndex, student] of savedStudents.entries()) {
+      const status = studentPatterns[studentIndex]?.[dateIndex] ?? "present";
+
+      await db
+        .insert(attendanceDetails)
+        .values({
+          sessionId: session.id,
+          studentId: student.id,
+          status,
+          notes: status === "permission" ? "Izin keluarga" : null,
+        })
+        .onConflictDoUpdate({
+          target: [attendanceDetails.sessionId, attendanceDetails.studentId],
+          set: {
+            status,
+            notes: status === "permission" ? "Izin keluarga" : null,
+            updatedAt: new Date(),
+          },
+        });
     }
   }
 

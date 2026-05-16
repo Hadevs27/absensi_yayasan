@@ -1,35 +1,33 @@
 import { compare } from "bcryptjs";
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import { apiFail, apiOk } from "@/core/http/api-response";
+import { loginSchema } from "@/core/validation/auth";
 import { getDb } from "@/db/db";
 import { users } from "@/db/schema";
 import { createSessionToken, SESSION_COOKIE } from "@/lib/session";
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as
-    | { email?: string; password?: string; next?: string }
-    | null;
+  const body = await request.json().catch(() => null);
+  const parsed = loginSchema.safeParse(body);
 
-  const email = body?.email?.toLowerCase().trim();
-  const password = body?.password;
-
-  if (!email || !password) {
-    return NextResponse.json({ message: "Email dan password wajib diisi." }, { status: 400 });
+  if (!parsed.success) {
+    return apiFail("Input login tidak valid.", 400, parsed.error.flatten().fieldErrors);
   }
 
+  const { email, password, next } = parsed.data;
   const db = getDb();
   const user = await db.query.users.findFirst({
     where: eq(users.email, email),
   });
 
   if (!user) {
-    return NextResponse.json({ message: "Email atau password tidak sesuai." }, { status: 401 });
+    return apiFail("Email atau password tidak sesuai.", 401);
   }
 
   const passwordValid = await compare(password, user.passwordHash);
 
   if (!passwordValid) {
-    return NextResponse.json({ message: "Email atau password tidak sesuai." }, { status: 401 });
+    return apiFail("Email atau password tidak sesuai.", 401);
   }
 
   const token = await createSessionToken({
@@ -39,8 +37,8 @@ export async function POST(request: Request) {
     role: user.role,
   });
 
-  const response = NextResponse.json({
-    redirectTo: body?.next && body.next.startsWith("/") ? body.next : "/dashboard",
+  const response = apiOk({
+    redirectTo: next?.startsWith("/") ? next : "/dashboard",
   });
 
   response.cookies.set(SESSION_COOKIE, token, {

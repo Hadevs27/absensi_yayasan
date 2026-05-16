@@ -1,4 +1,12 @@
-import { BarChart3, CalendarCheck, FileDown, GitBranch, LayoutDashboard } from "lucide-react";
+import {
+  BarChart3,
+  CalendarCheck,
+  FileDown,
+  GitBranch,
+  GraduationCap,
+  LayoutDashboard,
+  School,
+} from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "./logout-button";
 import type { SessionPayload } from "@/lib/session";
@@ -8,6 +16,8 @@ type Role = SessionPayload["role"];
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "user"] },
   { href: "/attendance", label: "Absensi", icon: CalendarCheck, roles: ["admin", "user"] },
+  { href: "/students", label: "Siswa", icon: GraduationCap, roles: ["admin"] },
+  { href: "/classes", label: "Kelas", icon: School, roles: ["admin"] },
   { href: "/reports", label: "Laporan", icon: FileDown, roles: ["admin"] },
   { href: "/clusters", label: "K-Means", icon: GitBranch, roles: ["admin"] },
 ] satisfies Array<{

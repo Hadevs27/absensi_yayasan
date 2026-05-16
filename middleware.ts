@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
-const protectedRoutes = ["/dashboard", "/attendance", "/reports", "/clusters"];
-const adminRoutes = ["/reports", "/clusters"];
+const protectedRoutes = ["/dashboard", "/attendance", "/reports", "/clusters", "/students", "/classes"];
+const adminRoutes = ["/reports", "/clusters", "/students", "/classes"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -31,5 +31,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/attendance/:path*", "/reports/:path*", "/clusters/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/attendance/:path*",
+    "/reports/:path*",
+    "/clusters/:path*",
+    "/students/:path*",
+    "/classes/:path*",
+  ],
 };

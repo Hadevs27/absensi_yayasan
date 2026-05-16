@@ -45,20 +45,19 @@ function mean(vectors: Vector[]): Vector {
 function labelCentroid(centroid: Vector) {
   const [hadir, terlambat, izin, sakit, cuti, alfa] = centroid;
   const nonActive = izin + sakit + cuti + alfa;
+  const total = hadir + terlambat + nonActive;
+  const hadirRate = total === 0 ? 0 : hadir / total;
+  const riskRate = total === 0 ? 0 : (terlambat + alfa * 1.5 + izin + sakit) / total;
 
-  if (hadir >= terlambat + nonActive && terlambat <= 1 && alfa <= 1) {
-    return "Rajin";
+  if (hadirRate >= 0.75 && riskRate <= 0.25) {
+    return "Disiplin Tinggi";
   }
 
-  if (terlambat >= hadir * 0.35 && terlambat >= alfa) {
-    return "Sering Terlambat";
+  if (hadirRate >= 0.45 && riskRate <= 0.75) {
+    return "Disiplin Sedang";
   }
 
-  if (alfa + nonActive >= hadir * 0.5) {
-    return "Butuh Perhatian";
-  }
-
-  return "Cukup Stabil";
+  return "Disiplin Rendah";
 }
 
 function silhouetteScore(vectors: Vector[], assignments: number[], k: number) {

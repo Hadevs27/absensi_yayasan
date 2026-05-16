@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
+import { getServerEnv } from "@/core/validation/env";
 import * as schema from "./schema";
 
 export function getDatabaseUrl() {
@@ -15,7 +16,7 @@ export function getDatabaseUrl() {
     );
   }
 
-  return databaseUrl;
+  return getServerEnv().DATABASE_URL;
 }
 
 export function getDb() {
