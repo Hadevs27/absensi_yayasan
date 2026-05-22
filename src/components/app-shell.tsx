@@ -6,6 +6,10 @@ import {
   GraduationCap,
   LayoutDashboard,
   School,
+  ShieldCheck,
+  UserCircle,
+  FileClock,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "./logout-button";
@@ -15,11 +19,14 @@ type Role = SessionPayload["role"];
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "user"] },
+  { href: "/dashboard/users", label: "User", icon: ShieldCheck, roles: ["admin"] },
   { href: "/attendance", label: "Absensi", icon: CalendarCheck, roles: ["admin", "user"] },
+  { href: "/notifications", label: "Notifikasi", icon: Bell, roles: ["admin", "user"] },
   { href: "/students", label: "Siswa", icon: GraduationCap, roles: ["admin"] },
   { href: "/classes", label: "Kelas", icon: School, roles: ["admin"] },
   { href: "/reports", label: "Laporan", icon: FileDown, roles: ["admin"] },
   { href: "/clusters", label: "K-Means", icon: GitBranch, roles: ["admin"] },
+  { href: "/dashboard/audit-logs", label: "Audit", icon: FileClock, roles: ["admin"] },
 ] satisfies Array<{
   href: string;
   label: string;
@@ -51,6 +58,14 @@ export function AppShell({
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/profile"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-stone-300 bg-white text-stone-700 transition hover:border-emerald-300 hover:text-emerald-700"
+              aria-label="Profil"
+              title="Profil"
+            >
+              <UserCircle className="h-4 w-4" />
+            </Link>
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-stone-900">{session.name}</p>
               <p className="text-xs text-stone-500">{session.email}</p>

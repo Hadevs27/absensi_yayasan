@@ -4,6 +4,7 @@ import { apiFail, apiOk } from "@/core/http/api-response";
 import { loginSchema } from "@/core/validation/auth";
 import { getDb } from "@/db/db";
 import { users } from "@/db/schema";
+import { writeAuditLog } from "@/features/audit/services/audit-service";
 import { createSessionToken, SESSION_COOKIE } from "@/lib/session";
 
 export async function POST(request: Request) {
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     where: eq(users.email, email),
   });
 
-  if (!user) {
+  if (!user || !user.isActive || user.deletedAt) {
     return apiFail("Email atau password tidak sesuai.", 401);
   }
 
@@ -35,6 +36,17 @@ export async function POST(request: Request) {
     email: user.email,
     name: user.name,
     role: user.role,
+  });
+
+  await db
+    .update(users)
+    .set({ lastLoginAt: new Date(), updatedAt: new Date() })
+    .where(eq(users.id, user.id));
+  await writeAuditLog(db, {
+    userId: user.id,
+    action: "login",
+    entity: "auth",
+    entityId: user.id,
   });
 
   const response = apiOk({

@@ -65,9 +65,9 @@ export default async function DashboardPage() {
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatTile label="Total siswa" value={dashboard.stats.totalStudents} />
-          <StatTile label="Hadir hari ini" value={dashboard.stats.presentToday} tone="sky" />
-          <StatTile label="Terlambat" value={dashboard.stats.lateToday} tone="amber" />
-          <StatTile label="Alfa" value={dashboard.stats.absentToday} tone="rose" />
+          <StatTile label="Total kelas" value={dashboard.stats.totalClasses} tone="sky" />
+          <StatTile label="Total absensi 30 hari" value={dashboard.stats.totalAttendance} tone="amber" />
+          <StatTile label="Alfa hari ini" value={dashboard.stats.absentToday} tone="rose" />
         </div>
 
         {dashboard.trend.length === 0 && dashboard.clusterSummary.length === 0 ? (

@@ -54,7 +54,7 @@ export default async function ReportsPage({
               <Download className="h-4 w-4" />
               CSV
             </a>
-            <a href={`/api/export/attendance?${query.toString()}&format=xls`} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800">
+            <a href={`/api/export/attendance?${query.toString()}&format=xlsx`} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800">
               <Download className="h-4 w-4" />
               Excel
             </a>

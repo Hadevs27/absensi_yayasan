@@ -22,7 +22,24 @@ export default async function EditStudentPage({ params }: { params: Promise<{ id
           <p className="text-sm font-medium text-emerald-700">Master data</p>
           <h1 className="mt-1 text-2xl font-semibold text-stone-950">Edit siswa</h1>
         </div>
-        <StudentForm mode="edit" studentId={student.id} defaultValues={student} classes={classes} />
+        <StudentForm
+          mode="edit"
+          studentId={student.id}
+          defaultValues={{
+            nis: student.nis,
+            name: student.name,
+            gender: student.gender,
+            birthDate: student.birthDate,
+            address: student.address ?? "",
+            parentName: student.parentName ?? "",
+            phone: student.phone ?? "",
+            classId: student.classId,
+            avatarUrl: student.avatarUrl ?? "",
+            guardianName: student.guardianName ?? "",
+            isActive: student.isActive,
+          }}
+          classes={classes}
+        />
       </section>
     </AppShell>
   );

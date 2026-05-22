@@ -2,7 +2,8 @@ import { getDb } from "@/db/db";
 import { getAttendanceReportRows } from "@/features/reports/services/attendance-report-service";
 import { ATTENDANCE_STATUS_LABEL } from "@/core/constants/attendance";
 import { getCurrentSession } from "@/lib/auth";
-import { toSimplePdf, toSpreadsheetXml } from "@/lib/export";
+import { toSimplePdf } from "@/lib/export";
+import * as XLSX from "xlsx";
 
 function csvCell(value: string | number | null | undefined) {
   const text = String(value ?? "");
@@ -37,11 +38,16 @@ export async function GET(request: Request) {
     row.notes ?? "",
   ]);
 
-  if (format === "xls") {
-    return new Response(toSpreadsheetXml(header, body), {
+  if (format === "xlsx" || format === "xls") {
+    const worksheet = XLSX.utils.aoa_to_sheet([header, ...body]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Absensi");
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
+
+    return new Response(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": "application/vnd.ms-excel; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="rekap-absensi.xls"',
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": 'attachment; filename="rekap-absensi.xlsx"',
       },
     });
   }

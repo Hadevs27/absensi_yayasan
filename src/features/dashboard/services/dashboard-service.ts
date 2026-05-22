@@ -39,6 +39,7 @@ export async function getAdminDashboardData(db: AppDb) {
       .where(gte(attendanceSessions.attendanceDate, startDate)),
     db.select().from(clusterRuns).orderBy(desc(clusterRuns.createdAt)).limit(1),
   ]);
+  const classRows = await db.select({ id: classes.id }).from(classes);
 
   const latestRun = latestRunRows[0];
   const latestClusters = latestRun
@@ -79,6 +80,8 @@ export async function getAdminDashboardData(db: AppDb) {
     today,
     stats: {
       totalStudents: studentRows.length,
+      totalClasses: classRows.length,
+      totalAttendance: trendDetails.length,
       presentToday: todayDetails.filter((detail) => detail.status === "present").length,
       lateToday: todayDetails.filter((detail) => detail.status === "late").length,
       absentToday: todayDetails.filter((detail) => detail.status === "absent").length,

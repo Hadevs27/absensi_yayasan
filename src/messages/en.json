@@ -1,0 +1,11 @@
+{
+  "app": {
+    "name": "Attendance K-Means",
+    "dashboard": "Dashboard",
+    "attendance": "Attendance",
+    "students": "Students",
+    "classes": "Classes",
+    "reports": "Reports",
+    "analytics": "Analytics"
+  }
+}

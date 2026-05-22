@@ -29,7 +29,7 @@ export default async function ClassesPage({
             <h1 className="mt-1 text-2xl font-semibold text-stone-950">Kelas</h1>
           </div>
           <Link
-            href="/classes/new"
+            href="/classes/create"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
           >
             <Plus className="h-4 w-4" />
@@ -76,6 +76,12 @@ export default async function ClassesPage({
                       <td className="py-3 pr-3 text-stone-600">{classItem.studentCount}</td>
                       <td className="py-3 pr-3">
                         <div className="flex gap-2">
+                          <Link
+                            href={`/classes/${classItem.id}`}
+                            className="inline-flex h-9 items-center gap-2 rounded-md border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+                          >
+                            Detail
+                          </Link>
                           <Link
                             href={`/classes/${classItem.id}/edit`}
                             className="inline-flex h-9 items-center gap-2 rounded-md border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 hover:bg-stone-50"

@@ -1,8 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
-const protectedRoutes = ["/dashboard", "/attendance", "/reports", "/clusters", "/students", "/classes"];
-const adminRoutes = ["/reports", "/clusters", "/students", "/classes"];
+const protectedRoutes = [
+  "/dashboard",
+  "/attendance",
+  "/reports",
+  "/clusters",
+  "/students",
+  "/classes",
+  "/profile",
+  "/notifications",
+];
+const adminRoutes = ["/reports", "/clusters", "/students", "/classes", "/dashboard/users", "/dashboard/audit-logs"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

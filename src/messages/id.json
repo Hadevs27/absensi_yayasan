@@ -1,0 +1,11 @@
+{
+  "app": {
+    "name": "Absensi K-Means",
+    "dashboard": "Dashboard",
+    "attendance": "Absensi",
+    "students": "Siswa",
+    "classes": "Kelas",
+    "reports": "Laporan",
+    "analytics": "Analitik"
+  }
+}

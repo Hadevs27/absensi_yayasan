@@ -27,6 +27,7 @@ export function ClassForm({
       level: defaultValues?.level ?? "",
       academicYear: defaultValues?.academicYear ?? "2025/2026",
       homeroomTeacherId: defaultValues?.homeroomTeacherId ?? "",
+      capacity: defaultValues?.capacity ?? 30,
     },
   });
 
@@ -65,6 +66,10 @@ export function ClassForm({
           <span className="text-sm font-medium text-stone-700">Tahun ajaran</span>
           <input className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("academicYear")} />
           {form.formState.errors.academicYear ? <span className="mt-1 block text-xs text-red-600">{form.formState.errors.academicYear.message}</span> : null}
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">Kapasitas</span>
+          <input type="number" className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("capacity")} />
         </label>
         <label className="block">
           <span className="text-sm font-medium text-stone-700">Wali kelas</span>

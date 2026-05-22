@@ -114,3 +114,25 @@ export function runStudentDisciplineClustering(
     silhouetteScore: result.silhouetteScore,
   };
 }
+
+export function summarizeDisciplineInsights(assignments: StudentClusterAssignment[]) {
+  const high = assignments.filter((item) => item.clusterLabel === "Disiplin Tinggi").length;
+  const medium = assignments.filter((item) => item.clusterLabel === "Disiplin Sedang").length;
+  const low = assignments.filter((item) => item.clusterLabel === "Disiplin Rendah").length;
+  const lateTotal = assignments.reduce((total, item) => total + item.metrics.total_terlambat, 0);
+  const absentTotal = assignments.reduce((total, item) => total + item.metrics.total_alfa, 0);
+
+  return {
+    cards: [
+      `${low} siswa memiliki tingkat disiplin rendah.`,
+      `${medium} siswa berada pada kategori disiplin sedang.`,
+      `${high} siswa berada pada kategori disiplin tinggi.`,
+      `Tercatat ${lateTotal} keterlambatan dan ${absentTotal} alfa pada periode ini.`,
+    ],
+    recommendations: [
+      low > 0 ? "Prioritaskan pembinaan untuk siswa disiplin rendah." : "Pertahankan monitoring rutin karena tidak ada siswa disiplin rendah.",
+      lateTotal > absentTotal ? "Wali kelas perlu memonitor pola keterlambatan pagi." : "Fokuskan pemantauan pada siswa dengan alfa berulang.",
+      "Gunakan rekap mingguan untuk komunikasi dengan wali atau orang tua.",
+    ],
+  };
+}

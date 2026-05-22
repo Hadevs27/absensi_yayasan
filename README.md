@@ -13,6 +13,11 @@ Aplikasi web untuk mencatat, memonitor, dan menganalisis kedisiplinan siswa pada
 - Recharts
 - Zod
 - React Hook Form
+- next-intl
+- next-themes
+- Vercel Blob
+- Sentry
+- Vitest
 
 ## Core Scope
 
@@ -25,6 +30,13 @@ Aplikasi web untuk mencatat, memonitor, dan menganalisis kedisiplinan siswa pada
 - Analytics kedisiplinan
 - K-Means clustering sederhana
 - Export laporan
+- User/admin management
+- Profile, security, preferences
+- Audit log
+- Notification center
+- Theme persistence
+- Multi-language foundation
+- Avatar upload via Vercel Blob
 
 Role yang digunakan hanya:
 
@@ -58,10 +70,15 @@ src/
   db/                     Drizzle schema, connection, seed
   features/
     analytics/            K-Means dataset and clustering service
+    audit/                Activity/audit logging
     classes/              Class data service
     dashboard/            Dashboard query service and chart widgets
+    notifications/        User notification center
+    profile/              Profile, password, preferences
     students/             Student data service
+    users/                User/admin management
   lib/                    Auth/session/date utilities and pure K-Means helper
+  messages/               i18n messages
 ```
 
 ## Database Model
@@ -76,6 +93,8 @@ erDiagram
   USERS ||--o{ ATTENDANCE_SESSIONS : "creates"
   CLUSTER_RUNS ||--o{ CLUSTERING_RESULTS : "produces"
   STUDENTS ||--o{ CLUSTERING_RESULTS : "classified_as"
+  USERS ||--o{ AUDIT_LOGS : "performs"
+  USERS ||--o{ NOTIFICATIONS : "receives"
 
   USERS {
     uuid id PK
@@ -83,6 +102,8 @@ erDiagram
     text email
     text password_hash
     enum role
+    boolean is_active
+    timestamp last_login_at
   }
 
   CLASSES {
@@ -91,12 +112,15 @@ erDiagram
     text level
     text academic_year
     uuid homeroom_teacher_id FK
+    int capacity
   }
 
   STUDENTS {
     uuid id PK
     text nis
     text name
+    enum gender
+    date birth_date
     uuid class_id FK
     boolean is_active
   }
@@ -106,6 +130,8 @@ erDiagram
     uuid class_id FK
     date attendance_date
     uuid created_by FK
+    uuid approved_by FK
+    timestamp approved_at
   }
 
   ATTENDANCE_DETAILS {
@@ -113,6 +139,25 @@ erDiagram
     uuid session_id FK
     uuid student_id FK
     enum status
+    text late_reason
+    text absence_reason
+  }
+
+  AUDIT_LOGS {
+    uuid id PK
+    uuid user_id FK
+    enum action
+    text entity
+    json old_data
+    json new_data
+  }
+
+  NOTIFICATIONS {
+    uuid id PK
+    uuid user_id FK
+    text title
+    text message
+    text type
   }
 
   CLUSTERING_RESULTS {
@@ -136,6 +181,8 @@ flowchart LR
 
   Admin --> ManageStudents["Kelola Siswa"]
   Admin --> ManageClasses["Kelola Kelas"]
+  Admin --> ManageUsers["Kelola User/Admin"]
+  Admin --> ViewAudit["Lihat Audit Log"]
   Admin --> ViewDashboard["Dashboard Admin"]
   Admin --> RunAnalytics["Jalankan K-Means"]
   Admin --> ExportReports["Export Laporan"]
@@ -216,6 +263,9 @@ DATABASE_URL="postgresql://USER:PASSWORD@ep-your-project-pooler.REGION.aws.neon.
 DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@ep-your-project.REGION.aws.neon.tech/absensi_kmeans?sslmode=require"
 NEXT_PUBLIC_APP_NAME="Absensi K-Means"
 AUTH_SECRET="generate-a-long-random-secret"
+BLOB_READ_WRITE_TOKEN=""
+SENTRY_DSN=""
+NEXT_PUBLIC_SENTRY_DSN=""
 ```
 
 Gunakan pooled URL untuk runtime Vercel dan localhost. Gunakan direct/non-pooled URL untuk `drizzle-kit push`.
@@ -226,6 +276,8 @@ Gunakan pooled URL untuk runtime Vercel dan localhost. Gunakan direct/non-pooled
 npm install
 npm run db:push
 npm run db:seed
+npm run type-check
+npm test
 npm run build
 npm run dev
 ```
@@ -247,11 +299,17 @@ Seed juga membuat contoh kelas, siswa, absensi, dan dataset analytics.
 
 - `/login`
 - `/dashboard`
+- `/dashboard/users`
+- `/dashboard/audit-logs`
 - `/attendance`
 - `/students`
 - `/classes`
 - `/reports`
 - `/clusters`
+- `/profile`
+- `/profile/security`
+- `/profile/preferences`
+- `/notifications`
 
 ## Engineering Improvements
 
@@ -264,11 +322,18 @@ Seed juga membuat contoh kelas, siswa, absensi, dan dataset analytics.
 - Student-based analytics service
 - Recharts dashboard visualization
 - Indexed schema for students, classes, attendance, and clustering
+- User/admin CRUD with activation, soft delete, reset password
+- Profile management and password change
+- Audit log system
+- Notification center
+- CSV, XLSX, and PDF export
+- Sentry integration hooks
+- GitHub Actions CI
+- Vitest test setup
 
 ## Next Incremental Refactor
 
-- Tambah create/edit/delete siswa dan kelas dengan React Hook Form.
-- Tambah input absensi kelas berbasis `attendance_sessions` dan `attendance_details`.
-- Tambah export Excel dan PDF selain CSV.
-- Tambah pagination/filter pada laporan absensi.
-- Tambah optimistic UI dan audit log sederhana untuk perubahan absensi.
+- Lengkapi penerjemahan semua label UI ke `messages/id.json` dan `messages/en.json`.
+- Tambahkan object storage untuk dokumen laporan selain avatar.
+- Tambahkan test integration untuk API route dengan database test.
+- Tambahkan dashboard recent activity yang membaca audit log.

@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { RunKMeansForm } from "@/components/run-kmeans-form";
 import { getDb } from "@/db/db";
 import { classes, clusteringResults, clusterRuns, students } from "@/db/schema";
+import { summarizeDisciplineInsights } from "@/features/analytics/services/student-analytics-service";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateId } from "@/lib/date";
 import { BarChart3 } from "lucide-react";
@@ -34,6 +35,22 @@ export default async function ClustersPage() {
         .leftJoin(classes, eq(students.classId, classes.id))
         .where(eq(clusteringResults.runId, latestRun.id))
     : [];
+  const insight = summarizeDisciplineInsights(
+    rows.map((row) => ({
+      studentId: "",
+      nis: row.nis,
+      studentName: row.studentName,
+      className: row.className ?? "-",
+      clusterIndex: row.clusterIndex,
+      clusterLabel: row.label,
+      metrics: {
+        total_hadir: row.totalHadir,
+        total_terlambat: row.totalTerlambat,
+        total_alfa: row.totalAlfa,
+        total_izin: row.totalIzin,
+      },
+    })),
+  );
 
   return (
     <AppShell session={session}>
@@ -44,6 +61,31 @@ export default async function ClustersPage() {
         </div>
 
         <RunKMeansForm />
+
+        {rows.length > 0 ? (
+          <section className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-lg border border-stone-200 bg-white p-4">
+              <h2 className="text-base font-semibold text-stone-950">Insights</h2>
+              <div className="mt-3 space-y-2">
+                {insight.cards.map((item) => (
+                  <p key={item} className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900">
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border border-stone-200 bg-white p-4">
+              <h2 className="text-base font-semibold text-stone-950">Rekomendasi</h2>
+              <ul className="mt-3 space-y-2 text-sm text-stone-700">
+                {insight.recommendations.map((item) => (
+                  <li key={item} className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-lg border border-stone-200 bg-white p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

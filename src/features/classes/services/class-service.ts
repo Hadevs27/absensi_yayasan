@@ -26,6 +26,7 @@ export async function getClassesPage(
       name: classes.name,
       level: classes.level,
       academicYear: classes.academicYear,
+      capacity: classes.capacity,
       createdAt: classes.createdAt,
     })
     .from(classes)

@@ -5,6 +5,7 @@ import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { AvatarUpload } from "@/components/avatar-upload";
 import type { ApiResponse } from "@/core/http/api-response";
 import { studentSchema, type StudentFormValues, type StudentInput } from "@/core/validation/master-data";
 
@@ -25,7 +26,13 @@ export function StudentForm({
     defaultValues: {
       nis: defaultValues?.nis ?? "",
       name: defaultValues?.name ?? "",
+      gender: defaultValues?.gender ?? null,
+      birthDate: defaultValues?.birthDate ?? null,
+      address: defaultValues?.address ?? "",
+      parentName: defaultValues?.parentName ?? "",
+      phone: defaultValues?.phone ?? "",
       classId: defaultValues?.classId ?? "",
+      avatarUrl: defaultValues?.avatarUrl ?? "",
       guardianName: defaultValues?.guardianName ?? "",
       isActive: defaultValues?.isActive ?? true,
     },
@@ -63,6 +70,18 @@ export function StudentForm({
           {form.formState.errors.name ? <span className="mt-1 block text-xs text-red-600">{form.formState.errors.name.message}</span> : null}
         </label>
         <label className="block">
+          <span className="text-sm font-medium text-stone-700">Jenis kelamin</span>
+          <select className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("gender")}>
+            <option value="">Belum diisi</option>
+            <option value="male">Laki-laki</option>
+            <option value="female">Perempuan</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">Tanggal lahir</span>
+          <input type="date" className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("birthDate")} />
+        </label>
+        <label className="block">
           <span className="text-sm font-medium text-stone-700">Kelas</span>
           <select className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("classId")}>
             <option value="">Belum diassign</option>
@@ -76,6 +95,25 @@ export function StudentForm({
         <label className="block">
           <span className="text-sm font-medium text-stone-700">Nama wali</span>
           <input className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("guardianName")} />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">Nama orang tua</span>
+          <input className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("parentName")} />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-stone-700">Telepon</span>
+          <input className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("phone")} />
+        </label>
+        <label className="block md:col-span-2">
+          <span className="text-sm font-medium text-stone-700">Avatar URL</span>
+          <input className="mt-2 h-10 w-full rounded-md border border-stone-300 px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("avatarUrl")} />
+          <div className="mt-2">
+            <AvatarUpload onUploaded={(url) => form.setValue("avatarUrl", url, { shouldDirty: true })} />
+          </div>
+        </label>
+        <label className="block md:col-span-2">
+          <span className="text-sm font-medium text-stone-700">Alamat</span>
+          <textarea className="mt-2 min-h-24 w-full rounded-md border border-stone-300 px-3 py-2 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" {...form.register("address")} />
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" className="h-4 w-4 rounded border-stone-300 text-emerald-700" {...form.register("isActive")} />

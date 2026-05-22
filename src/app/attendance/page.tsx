@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getDb } from "@/db/db";
 import { ClassAttendanceForm } from "@/features/attendance/components/class-attendance-form";
+import { AttendanceSessionActions } from "@/features/attendance/components/attendance-session-actions";
 import {
   getAccessibleClasses,
   getClassAttendanceEntry,
@@ -82,13 +83,22 @@ export default async function AttendancePage({
                   <h2 className="text-base font-semibold text-stone-950">
                     {selectedClass?.name ?? "Kelas"} - {selectedClass?.academicYear ?? ""}
                   </h2>
-                  <p className="text-sm text-stone-500">
-                    {entry?.session ? "Absensi sudah pernah disimpan dan dapat diedit." : "Absensi belum disimpan."}
+                <p className="text-sm text-stone-500">
+                    {entry?.session
+                      ? entry.session.approvedAt
+                        ? "Absensi sudah disetujui admin."
+                        : "Absensi sudah pernah disimpan dan dapat diedit."
+                      : "Absensi belum disimpan."}
                   </p>
                 </div>
-                <Link href="/reports" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
-                  Lihat rekap
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                  {session.role === "admin" && entry?.session ? (
+                    <AttendanceSessionActions sessionId={entry.session.id} approved={Boolean(entry.session.approvedAt)} />
+                  ) : null}
+                  <Link href="/reports" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                    Lihat rekap
+                  </Link>
+                </div>
               </div>
             </section>
 

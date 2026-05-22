@@ -15,6 +15,19 @@ import {
 
 export const roleEnum = pgEnum("role", ["admin", "user"]);
 
+export const genderEnum = pgEnum("gender", ["male", "female"]);
+
+export const auditActionEnum = pgEnum("audit_action", [
+  "create",
+  "update",
+  "delete",
+  "login",
+  "logout",
+  "activate",
+  "deactivate",
+  "reset_password",
+]);
+
 export const attendanceStatusEnum = pgEnum("attendance_status", [
   "present",
   "late",
@@ -33,12 +46,22 @@ export const users = pgTable(
     passwordHash: text("password_hash").notNull(),
     role: roleEnum("role").notNull().default("user"),
     employeeCode: text("employee_code").notNull(),
+    avatarUrl: text("avatar_url"),
+    phone: text("phone"),
+    address: text("address"),
+    preferredLanguage: text("preferred_language").notNull().default("id"),
+    themePreference: text("theme_preference").notNull().default("system"),
+    isActive: boolean("is_active").notNull().default(true),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     emailUnique: uniqueIndex("users_email_unique").on(table.email),
     employeeCodeUnique: uniqueIndex("users_employee_code_unique").on(table.employeeCode),
+    roleIdx: index("users_role_idx").on(table.role),
+    activeIdx: index("users_active_idx").on(table.isActive),
   }),
 );
 
@@ -52,6 +75,8 @@ export const classes = pgTable(
     homeroomTeacherId: uuid("homeroom_teacher_id").references(() => users.id, {
       onDelete: "set null",
     }),
+    capacity: integer("capacity").notNull().default(30),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -67,9 +92,16 @@ export const students = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     nis: text("nis").notNull(),
     name: text("name").notNull(),
+    gender: genderEnum("gender"),
+    birthDate: date("birth_date"),
+    address: text("address"),
+    parentName: text("parent_name"),
+    phone: text("phone"),
     classId: uuid("class_id").references(() => classes.id, { onDelete: "set null" }),
+    avatarUrl: text("avatar_url"),
     guardianName: text("guardian_name"),
     isActive: boolean("is_active").notNull().default(true),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -114,7 +146,10 @@ export const attendanceSessions = pgTable(
       .references(() => classes.id, { onDelete: "cascade" }),
     attendanceDate: date("attendance_date").notNull(),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    approvedBy: uuid("approved_by").references(() => users.id, { onDelete: "set null" }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
     notes: text("notes"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -140,7 +175,10 @@ export const attendanceDetails = pgTable(
       .references(() => students.id, { onDelete: "cascade" }),
     status: attendanceStatusEnum("status").notNull().default("present"),
     notes: text("notes"),
+    lateReason: text("late_reason"),
+    absenceReason: text("absence_reason"),
     recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -234,6 +272,43 @@ export const clusteringResults = pgTable(
   }),
 );
 
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    action: auditActionEnum("action").notNull(),
+    entity: text("entity").notNull(),
+    entityId: text("entity_id"),
+    oldData: jsonb("old_data").$type<Record<string, unknown> | null>(),
+    newData: jsonb("new_data").$type<Record<string, unknown> | null>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("audit_logs_user_idx").on(table.userId),
+    actionIdx: index("audit_logs_action_idx").on(table.action),
+    entityIdx: index("audit_logs_entity_idx").on(table.entity),
+    createdAtIdx: index("audit_logs_created_at_idx").on(table.createdAt),
+  }),
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    type: text("type").notNull().default("info"),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("notifications_user_idx").on(table.userId),
+    readIdx: index("notifications_read_idx").on(table.readAt),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Class = typeof classes.$inferSelect;
@@ -241,3 +316,5 @@ export type Student = typeof students.$inferSelect;
 export type AttendanceRecord = typeof attendanceRecords.$inferSelect;
 export type NewAttendanceRecord = typeof attendanceRecords.$inferInsert;
 export type AttendanceDetail = typeof attendanceDetails.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
